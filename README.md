@@ -33,19 +33,20 @@
 - 🔒 Контроль целостности операций
 
 ## 🏗️ Структура проекта
+```
 src/
 ├── main.rs # Точка входа
 ├── config.rs # Конфигурация (TOML)
 ├── file_processor.rs # Основная логика
 ├── directory.rs # Файловая система
 └── hash.rs # Хеширование
-
+```
 ## 🚀 Использование
 
 ### Запуск
 ```bash
 cargo run -- <source_dir> <target_base> <config_file>
-
+```
 ### Пример config.toml
 ```
 extensions = [
