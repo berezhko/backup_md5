@@ -45,12 +45,14 @@ pub fn handle_md5_copy(source_path: &Path, md5_dir: &Path, md5_hex: &str) -> Res
     Ok(full_md5_path)
 }
 
+/// Создает файл с записью во временной директории, сохраняя структуру каталогов
 pub fn create_timestamp_record(
     source_path: &Path,
     source_base: &Path,
     timestamp_dir: &Path,
     full_md5_path: &str,
 ) -> Result<()> {
+    // Получаем относительный путь от базовой директории
     let relative_path = source_path.strip_prefix(source_base)
         .with_context(|| format!(
             "Failed to get relative path for {} from base {}",
@@ -58,8 +60,10 @@ pub fn create_timestamp_record(
             source_base.display()
         ))?;
 
+    // Создаем полный путь во временной директории
     let record_path = timestamp_dir.join(relative_path);
     
+    // Создаем все необходимые поддиректории
     if let Some(parent) = record_path.parent() {
         create_dir_all(parent)
             .with_context(|| format!(
@@ -68,6 +72,7 @@ pub fn create_timestamp_record(
             ))?;
     }
 
+    // Создаем файл с записью
     let mut output = File::create(&record_path)
         .with_context(|| format!(
             "Failed to create file: {}",
