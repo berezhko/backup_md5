@@ -3,7 +3,6 @@ use md5;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use tempfile::NamedTempFile;
 
 pub fn calculate_md5(path: &Path) -> Result<String> {
     let mut file = File::open(path)
@@ -21,6 +20,7 @@ pub fn calculate_md5(path: &Path) -> Result<String> {
 mod tests {
     use super::*;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_calculate_md5_empty_file() {
