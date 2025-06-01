@@ -1,14 +1,15 @@
 use anyhow::{Context, Result};
 use chrono::Local;
 use std::collections::HashSet;
+use std::ffi::OsStr;
 use std::fs::{self, create_dir_all, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::ffi::OsStr;
 
 pub fn create_directories(dirs: &[&Path]) -> Result<()> {
     for dir in dirs {
-        create_dir_all(dir).with_context(|| format!("Failed to create directory: {}", dir.display()))?;
+        create_dir_all(dir)
+            .with_context(|| format!("Failed to create directory: {}", dir.display()))?;
     }
     Ok(())
 }
@@ -26,21 +27,14 @@ pub fn has_extension(path: &Path, extensions: &HashSet<String>) -> bool {
         .unwrap_or(false)
 }
 
-pub fn handle_md5_copy(
-    source_path: &Path,
-    md5_dir: &Path,
-    md5_hex: &str,
-) -> Result<String> {
+pub fn handle_md5_copy(source_path: &Path, md5_dir: &Path, md5_hex: &str) -> Result<String> {
     // Получаем первые два символа MD5 для поддиректории
     let prefix = &md5_hex[..2];
-    
+
     // Создаем путь: md5_dir/{prefix}/{md5_hex}
     let sub_dir = md5_dir.join(prefix);
     create_dir_all(&sub_dir)
-        .with_context(|| format!(
-            "Failed to create subdirectory: {}",
-            sub_dir.display()
-        ))?;
+        .with_context(|| format!("Failed to create subdirectory: {}", sub_dir.display()))?;
 
     let md5_target = sub_dir.join(md5_hex);
     let full_md5_path = fs::canonicalize(&md5_target)
@@ -50,12 +44,13 @@ pub fn handle_md5_copy(
 
     // Копируем только если файл не существует
     if !md5_target.exists() {
-        fs::copy(source_path, &md5_target)
-            .with_context(|| format!(
+        fs::copy(source_path, &md5_target).with_context(|| {
+            format!(
                 "Failed to copy {} to {}",
                 source_path.display(),
                 md5_target.display()
-            ))?;
+            )
+        })?;
     }
 
     Ok(full_md5_path)
@@ -69,47 +64,38 @@ pub fn create_timestamp_record(
     full_md5_path: &str,
 ) -> Result<()> {
     // Получаем относительный путь от базовой директории
-    let relative_path = source_path.strip_prefix(source_base)
-        .with_context(|| format!(
+    let relative_path = source_path.strip_prefix(source_base).with_context(|| {
+        format!(
             "Failed to get relative path for {} from base {}",
             source_path.display(),
             source_base.display()
-        ))?;
+        )
+    })?;
 
     // Создаем полный путь во временной директории
     let record_path = timestamp_dir.join(relative_path);
-    
+
     // Создаем все необходимые поддиректории
     if let Some(parent) = record_path.parent() {
         create_dir_all(parent)
-            .with_context(|| format!(
-                "Failed to create directory: {}",
-                parent.display()
-            ))?;
+            .with_context(|| format!("Failed to create directory: {}", parent.display()))?;
     }
 
     // Создаем файл с записью
     let mut output = File::create(&record_path)
-        .with_context(|| format!(
-            "Failed to create file: {}",
-            record_path.display()
-        ))?;
-    
+        .with_context(|| format!("Failed to create file: {}", record_path.display()))?;
+
     write!(output, "{}", full_md5_path)
-        .with_context(|| format!(
-            "Failed to write to file: {}",
-            record_path.display()
-        ))?;
-    
+        .with_context(|| format!("Failed to write to file: {}", record_path.display()))?;
+
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::{TempDir, NamedTempFile};
     use std::fs;
+    use tempfile::{NamedTempFile, TempDir};
 
     #[test]
     fn test_create_directories_success() {
@@ -136,11 +122,13 @@ mod tests {
     fn test_create_timestamp_dir() {
         let temp_dir = TempDir::new().unwrap();
         let result = create_timestamp_dir(temp_dir.path().to_str().unwrap());
-        
+
         assert!(result.is_ok());
         let timestamp_dir = result.unwrap();
         // assert!(timestamp_dir.exists()); create_timestamp_dir - не создает файлов/диреторий
-        assert!(timestamp_dir.to_string_lossy().contains(Local::now().format("%Y%m%d").to_string().as_str()));
+        assert!(timestamp_dir
+            .to_string_lossy()
+            .contains(Local::now().format("%Y%m%d").to_string().as_str()));
     }
 
     #[test]
@@ -162,10 +150,10 @@ mod tests {
 
         let md5_hex = "098f6bcd4621d373cade4e832627b4f6"; // MD5 для "test"
         let md5_dir = temp_dir.path().join("md5");
-        
+
         let result = handle_md5_copy(&source_file, &md5_dir, md5_hex);
         assert!(result.is_ok());
-        
+
         let expected_path = md5_dir.join("09").join(md5_hex);
         assert!(expected_path.exists());
     }
@@ -178,12 +166,12 @@ mod tests {
 
         let md5_hex = "098f6bcd4621d373cade4e832627b4f6";
         let md5_dir = temp_dir.path().join("md5");
-        
+
         // Первое копирование
         handle_md5_copy(&source_file, &md5_dir, md5_hex).unwrap();
         // Второе копирование (не должно вызывать ошибку)
         let result = handle_md5_copy(&source_file, &md5_dir, md5_hex);
-        
+
         assert!(result.is_ok());
     }
 
@@ -203,7 +191,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let source_base = temp_dir.path().join("source");
         fs::create_dir(&source_base).unwrap();
-        
+
         let source_file = source_base.join("test.txt");
         fs::write(&source_file, "content").unwrap();
 
@@ -212,7 +200,7 @@ mod tests {
 
         let result = create_timestamp_record(&source_file, &source_base, &timestamp_dir, md5_path);
         assert!(result.is_ok());
-        
+
         let expected_record = timestamp_dir.join("test.txt");
         assert!(expected_record.exists());
         assert_eq!(fs::read_to_string(expected_record).unwrap(), md5_path);
@@ -222,10 +210,10 @@ mod tests {
     fn test_create_timestamp_record_nested() {
         let temp_dir = TempDir::new().unwrap();
         let source_base = temp_dir.path().join("source");
-        
+
         let nested_dir = source_base.join("nested/dir");
         fs::create_dir_all(&nested_dir).unwrap();
-        
+
         let source_file = nested_dir.join("file.txt");
         fs::write(&source_file, "content").unwrap();
 
@@ -234,7 +222,7 @@ mod tests {
 
         let result = create_timestamp_record(&source_file, &source_base, &timestamp_dir, md5_path);
         assert!(result.is_ok());
-        
+
         let expected_record = timestamp_dir.join("nested/dir/file.txt");
         assert!(expected_record.exists());
         assert_eq!(fs::read_to_string(expected_record).unwrap(), md5_path);

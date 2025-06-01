@@ -2,8 +2,8 @@ use anyhow::Result;
 use std::env;
 
 mod config;
-mod file_processor;
 mod directory;
+mod file_processor;
 mod hash;
 
 use config::Config;
@@ -12,7 +12,10 @@ use file_processor::process_files_with_extensions;
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 4 {
-        eprintln!("Usage: {} <source_dir> <target_base> <config_file>", args[0]);
+        eprintln!(
+            "Usage: {} <source_dir> <target_base> <config_file>",
+            args[0]
+        );
         eprintln!("Example: {} ./src ./target config.toml", args[0]);
         std::process::exit(1);
     }
