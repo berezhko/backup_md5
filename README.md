@@ -46,7 +46,8 @@ src/
 ```bash
 cargo run -- <source_dir> <target_base> <config_file>
 
-Пример config.toml
+### Пример config.toml
+```
 extensions = [
     "jpg",    # JPEG images
     "png",    # PNG images
@@ -54,8 +55,10 @@ extensions = [
     "pdf",    # PDF documents
     # "tmp",  # Временно отключено
 ]
+```
 
-Пример выходной структуры
+### Пример выходной структуры
+```
 target/
 ├── files_by_md5/
 │   ├── 9a/
@@ -65,8 +68,9 @@ target/
 └── 20230601_123045/  # Timestamp
     ├── docs/         # Original structure
     └── images/
+```
 
-Технические требования
+### Технические требования
 Rust 1.60+
 
 Поддерживаемые ОС: Linux, macOS, Windows
