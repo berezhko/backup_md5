@@ -2,7 +2,7 @@ use crate::{directory, hash};
 use anyhow::Result;
 use std::collections::HashSet;
 use std::path::{Path};
-use walkdir::DirEntry;
+use walkdir::{DirEntry, WalkDir};
 
 pub fn process_files_with_extensions(
     source_dir: &str,
@@ -15,8 +15,9 @@ pub fn process_files_with_extensions(
 
     directory::create_directories(&[&md5_dir, &timestamp_dir])?;
 
-    for entry in walkdir::WalkDir::new(source_dir)
+    for entry in WalkDir::new(source_dir)
         .into_iter()
+        .filter_entry(|e| !is_hidden(e)) // Фильтрация скрытых директорий
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
     {
@@ -28,6 +29,23 @@ pub fn process_files_with_extensions(
     }
 
     Ok(())
+}
+
+/// Проверяет, является ли директория или файл скрытым
+fn is_hidden(entry: &DirEntry) -> bool {
+    entry.file_name()
+         .to_str()
+         .map(|s| s.starts_with('.')) // Unix-скрытые файлы
+         .unwrap_or(false)
+         || entry.path()
+                .components()
+                .any(|c| {
+                    if let std::path::Component::Normal(os_str) = c {
+                        os_str.to_str().map(|s| s.starts_with('.')).unwrap_or(false)
+                    } else {
+                        false
+                    }
+                }) // Проверка всех компонентов пути
 }
 
 fn should_process_file(entry: &DirEntry, extensions: &HashSet<String>) -> bool {
