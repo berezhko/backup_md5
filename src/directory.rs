@@ -61,7 +61,7 @@ pub fn create_timestamp_record(
     source_path: &Path,
     source_base: &Path,
     timestamp_dir: &Path,
-    full_md5_path: &str,
+    md5_hex: &str,
 ) -> Result<()> {
     // Получаем относительный путь от базовой директории
     let relative_path = source_path.strip_prefix(source_base).with_context(|| {
@@ -85,7 +85,7 @@ pub fn create_timestamp_record(
     let mut output = File::create(&record_path)
         .with_context(|| format!("Failed to create file: {}", record_path.display()))?;
 
-    write!(output, "{}", full_md5_path)
+    write!(output, "{}", md5_hex)
         .with_context(|| format!("Failed to write to file: {}", record_path.display()))?;
 
     Ok(())

@@ -59,8 +59,8 @@ fn process_file(
 ) -> Result<()> {
     let path = entry.path();
     let md5_hex = hash::calculate_md5(path)?;
-    let full_md5_path = directory::handle_md5_copy(path, md5_dir, &md5_hex)?;
-    directory::create_timestamp_record(path, source_base, timestamp_dir, &full_md5_path)?;
+    let _full_md5_path = directory::handle_md5_copy(path, md5_dir, &md5_hex)?;
+    directory::create_timestamp_record(path, source_base, timestamp_dir, &md5_hex)?;
     Ok(())
 }
 
