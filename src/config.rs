@@ -5,6 +5,7 @@ use std::fs;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    #[serde(deserialize_with = "deserialize_lowercase_hashset")]
     pub extensions: HashSet<String>,
 }
 
@@ -18,6 +19,15 @@ impl Config {
 
         Ok(config)
     }
+}
+
+fn deserialize_lowercase_hashset<'de, D>(deserializer: D) -> Result<HashSet<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let original: HashSet<String> = HashSet::deserialize(deserializer)?;
+    let lowercase = original.into_iter().map(|s| s.to_lowercase()).collect();
+    Ok(lowercase)
 }
 
 #[cfg(test)]
@@ -45,7 +55,6 @@ mod tests {
         assert!(config.extensions.contains("pdf"));
     }
 
-    #[ignore]
     #[test]
     fn test_case_insensitive_extensions() {
         let mut config_file = NamedTempFile::new().unwrap();
@@ -79,7 +88,6 @@ mod tests {
         assert!(config.extensions.is_empty());
     }
 
-    #[ignore]
     #[test]
     fn test_duplicate_extensions() {
         let mut config_file = NamedTempFile::new().unwrap();
